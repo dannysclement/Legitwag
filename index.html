@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@13.0.0"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background: #f4f4f4;
+            margin: 0;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 320px;
+            text-align: center;
+        }
+        .container h2 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        .input-group {
+            margin-bottom: 15px;
+            text-align: left;
+        }
+        .input-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        .btn {
+            background: #28a745;
+            color: white;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .btn:hover {
+            background: #218838;
+        }
+        .error {
+            color: red;
+            font-size: 12px;
+            margin-top: 5px;
+        }
+        .success {
+            color: green;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>Sign Up</h2>
+        <form id="signupForm">
+            <div class="input-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" required>
+                <div class="error" id="usernameError"></div>
+            </div>
+            <div class="input-group">
+                <label for="email">Email</label>
+                <input type="email" id="email" required>
+                <div class="error" id="emailError"></div>
+            </div>
+            <div class="input-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" required>
+                <div class="error" id="passwordError"></div>
+            </div>
+            <button type="submit" class="btn">Sign Up</button>
+            <div class="success" id="successMessage"></div>
+        </form>
+    </div>
+
+    <script>
+        // Initialize Appwrite SDK
+        const client = new Appwrite.Client()
+            .setEndpoint("https://cloud.appwrite.io/v1") // Your Appwrite API Endpoint
+            .setProject("67dd9a3d0015ddf72293"); // Your Appwrite Project ID
+
+        const account = new Appwrite.Account(client);
+        const databases = new Appwrite.Databases(client);
+
+        document.getElementById("signupForm").addEventListener("submit", async function(event) {
+            event.preventDefault();
+            
+            let username = document.getElementById("username").value.trim();
+            let email = document.getElementById("email").value.trim();
+            let password = document.getElementById("password").value.trim();
+            let successMessage = document.getElementById("successMessage");
+
+            // Reset Errors
+            document.getElementById("usernameError").textContent = "";
+            document.getElementById("emailError").textContent = "";
+            document.getElementById("passwordError").textContent = "";
+            successMessage.textContent = "";
+
+            let isValid = true;
+
+            if (username.length < 3) {
+                document.getElementById("usernameError").textContent = "Username must be at least 3 characters.";
+                isValid = false;
+            }
+
+            if (!email.includes("@") || !email.includes(".")) {
+                document.getElementById("emailError").textContent = "Enter a valid email address.";
+                isValid = false;
+            }
+
+            if (password.length < 6) {
+                document.getElementById("passwordError").textContent = "Password must be at least 6 characters.";
+                isValid = false;
+            }
+
+            if (!isValid) return;
+
+            try {
+                // Step 1: Create User in Authentication
+                const newUser = await account.create("unique()", email, password, username);
+
+                // Step 2: Store User Data in Appwrite Database
+                await databases.createDocument(
+                    "67dd9d590001e498063d", // Your Database ID
+                    "67ec6eb60030df05ea0b", // Your Collection ID
+                    "unique()", 
+                    {
+                        username: username,
+                        email: email
+                    }
+                );
+
+                successMessage.textContent = "Sign-up successful! Redirecting...";
+                setTimeout(() => {
+                    window.location.href = "login.html"; // Redirect after successful signup
+                }, 2000);
+
+                document.getElementById("signupForm").reset();
+            } catch (error) {
+                alert("Error: " + error.message);
+            }
+        });
+    </script>
+
+</body>
+</html>
